@@ -38,8 +38,7 @@ def is_exception(obj):
 
 # https://stackoverflow.com/questions/74345065/attributeerror-module-asyncio-has-no-attribute-coroutine-in-python-3-11
 async def callback(attempt, exc, args, kwargs, delay=0.5, *, loop):
-    yield from asyncio.sleep(delay, loop=loop)
-
+    await asyncio.sleep(delay)
     return retry
 
 
@@ -68,8 +67,7 @@ def retry(
     """
     def wrapper(fn):
         @wraps(fn)
-        @asyncio.coroutine
-        def wrapped(*fn_args, **fn_kwargs):
+        async def wrapped(*fn_args, **fn_kwargs):
             _loop = asyncio.get_event_loop()
             if (
                     timeout is not None and
@@ -94,7 +92,7 @@ def retry(
 
                     if timeout is None:
                         if asyncio.iscoroutinefunction(unpartial(fn)):
-                            ret = yield from ret
+                            ret = await ret
                     else:
                         if not asyncio.iscoroutinefunction(unpartial(fn)):
                             raise ConditionError(
@@ -102,7 +100,7 @@ def retry(
                             )
 
                         with async_timeout.timeout(timeout):
-                            ret = yield from ret
+                            ret = await ret
 
                     return ret
 
@@ -138,7 +136,7 @@ def retry(
                             ret = fallback(fn_args, fn_kwargs)
 
                             if asyncio.iscoroutinefunction(unpartial(fallback)):  # noqa
-                                ret = yield from ret
+                                ret = await ret
                         else:
                             ret = fallback
 
@@ -164,7 +162,7 @@ def retry(
                     attempt += 1
 
                     if asyncio.iscoroutinefunction(unpartial(callback)):
-                        ret = yield from ret
+                        ret = await ret
 
                     if ret is not retry:
                         return ret
